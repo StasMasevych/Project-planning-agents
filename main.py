@@ -9,7 +9,9 @@ load_env()
 # System, JSON, YAML
 import os
 import yaml
-import json
+
+# Data processing
+import pandas as pd
 
 # CrewAI
 from crewai import Agent, Task, Crew
@@ -108,3 +110,72 @@ crew = Crew(
   ],
   verbose=True
 )
+
+# crew inputs
+
+project = 'Website'
+industry = 'Technology'
+project_objectives = 'Create a website for a small business'
+team_members = """
+- John Doe (Project Manager)
+- Jane Doe (Software Engineer)
+- Bob Smith (Designer)
+- Alice Johnson (QA Engineer)
+- Tom Brown (QA Engineer)
+"""
+project_requirements = """
+- Create a responsive design that works well on desktop and mobile devices
+- Implement a modern, visually appealing user interface with a clean look
+- Develop a user-friendly navigation system with intuitive menu structure
+- Include an "About Us" page highlighting the company's history and values
+- Design a "Services" page showcasing the business's offerings with descriptions
+- Create a "Contact Us" page with a form and integrated map for communication
+- Implement a blog section for sharing industry news and company updates
+- Ensure fast loading times and optimize for search engines (SEO)
+- Integrate social media links and sharing capabilities
+- Include a testimonials section to showcase customer feedback and build trust
+"""
+
+# The given Python dictionary
+inputs = {
+  'project_type': project,
+  'project_objectives': project_objectives,
+  'industry': industry,
+  'team_members': team_members,
+  'project_requirements': project_requirements
+}
+
+# Run the crew
+result = crew.kickoff(
+  inputs=inputs
+)
+
+# Usage Metrics and Costs
+
+costs = 0.150 * (crew.usage_metrics.prompt_tokens + crew.usage_metrics.completion_tokens) / 1_000_000
+print(f"Total costs: ${costs:.4f}")
+
+# Convert UsageMetrics instance to a DataFrame
+df_usage_metrics = pd.DataFrame([crew.usage_metrics.dict()])
+df_usage_metrics
+
+# Extract tasks from the result
+
+tasks = result.pydantic.model_dump()['tasks']
+df_tasks = pd.DataFrame(tasks)
+
+# Display the DataFrame as an HTML table
+df_tasks.style.set_table_attributes('border="1"').set_caption("Task Details").set_table_styles(
+    [{'selector': 'th, td', 'props': [('font-size', '120%')]}]
+)
+
+# Just view basic DataFrame in terminal
+print(df_tasks)
+
+# Save the table as an HTML file
+df_tasks.to_html('tasks_table.html', border=1)
+
+print("✅ Tasks table saved as tasks_table.html")
+
+# Save the table as an Excel file
+df_tasks.to_excel('tasks_table.xlsx', index=False)
